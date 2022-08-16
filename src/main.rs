@@ -76,7 +76,7 @@ fn extract_sub_group(master_list: &mut Vec<Vec<u8>>) -> LSubGroup {
     let out_vec: Vec<u8> = Vec::from([first_letter, 40u8]);
 
     let mut temp: Vec<u8>;
-    while master_list[0][0] == first_letter {
+    while master_list.len() > 0 && master_list[0][0] == first_letter {
         temp = master_list.remove(0);
         temp.remove(0);
         in_vec.push(temp);
@@ -100,7 +100,9 @@ fn extract_sub_group(master_list: &mut Vec<Vec<u8>>) -> LSubGroup {
 fn treeify(mut words: LSubGroup) -> Option<Vec<u8>> {
 
     while words.inp.len() > 0 {
-        words.info();
+
+        //words.info();
+        
         if words.inp.len() == 1 {
             words.outp.append(&mut words.inp.remove(0));
             for _ in 0..words.counts.len() {
@@ -179,11 +181,9 @@ fn treeify(mut words: LSubGroup) -> Option<Vec<u8>> {
 
 
 fn main() -> io::Result<()> {
-    println!("hello?");
 
     let argv: Vec<String> = env::args().collect();
-    let cursor = io::Cursor::new(fs::read(&argv[1])?);
-    let mut wlist: Vec<Vec<u8>> = cursor.split(b'\n').map(|x| x.ok().unwrap()).collect();
+    let mut wlist: Vec<Vec<u8>> = io::Cursor::new(fs::read(&argv[1])?).split(b'\n').map(|x| x.unwrap()).collect();
 
     let mut word_tree: Vec<u8> = Vec::new();
     let mut letter_group: LSubGroup;
@@ -191,37 +191,15 @@ fn main() -> io::Result<()> {
     
     while wlist.len() > 0 {
         
-        println!("{:?}", wlist.len());
         letter_group = extract_sub_group(&mut wlist);
         sub_tree = treeify(letter_group).unwrap();
         word_tree.append(&mut sub_tree);
         
     }
-    //agroup.info();
 
-    println!(":: {:?}", String::from_utf8(word_tree.clone()).unwrap());
+    println!("{}", String::from_utf8(word_tree.clone()).unwrap());
     Ok(())
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
