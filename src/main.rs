@@ -179,12 +179,15 @@ fn treeify(mut words: LSubGroup) -> Option<Vec<u8>> {
     return Some(words.outp)
 }
 
+fn get_file(file_name: String) -> io::Result<Vec<Vec<u8>>> {
 
-fn main() -> io::Result<()> {
+    let word_vectors: Vec<Vec<u8>> = io::Cursor::new(fs::read(&file_name)?).split(b'\n').map(|x| x.unwrap()).collect();
+    return Ok(word_vectors)
+}
 
-    let argv: Vec<String> = env::args().collect();
-    let mut wlist: Vec<Vec<u8>> = io::Cursor::new(fs::read(&argv[1])?).split(b'\n').map(|x| x.unwrap()).collect();
+fn parse_file(file: String) -> Vec<u8> {
 
+    let mut wlist: Vec<Vec<u8>> = get_file(file).unwrap();
     let mut word_tree: Vec<u8> = Vec::new();
     let mut letter_group: LSubGroup;
     let mut sub_tree: Vec<u8>;
@@ -197,9 +200,94 @@ fn main() -> io::Result<()> {
         
     }
 
-    println!("{}", String::from_utf8(word_tree.clone()).unwrap());
-    Ok(())
+    word_tree.pop();
+    return word_tree
 }
+
+fn main() -> io::Result<()> {
+
+    let argv: Vec<String> = env::args().collect();
+    let output: Vec<u8> = parse_file(argv[1].clone());
+
+    println!("{}", String::from_utf8(output.clone()).unwrap());
+    Ok(())
+
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use crate::parse_file;
+
+    
+    #[test]
+    fn overall_1() {
+        let locus: String = String::from("tests/tfile1");
+        assert_eq!(
+            "A(aron|b(dullah|igail)|dam|hmed|l(an|bert|e(ssandro|x(ander|is))|i(ce)?|ma)|m(anda|ber|elia|y)|n(astasia|dre(a|w)|gela|na?|t(hony|oni))|rthur|shley|u(rora|stin)|va)",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );        
+    }
+
+    #[test]
+    fn overall_2() {
+
+        let locus: String = String::from("tests/tfile2");
+        assert_eq!(
+            "S(a(m(antha|uel)|ndra|rah?)|cott|e(an|rgei)|h(aron|irley)|o(f(ia|ía)|phia)|te(ph(anie|en)|ven)|usan)",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );
+    }
+    
+    #[test]
+    fn overall_3() {
+
+        let locus: String = String::from("tests/tfile3");
+        assert_eq!(
+            "M(a(dison|hmoud|r(garet|i(a|e|lyn)|k|t(ha|ina|ín)|y(am)?|ía)|son|t(eo|t(eo|hew))|xim)|e(gan|lissa)|i(ch(ael|elle)|khail)|ohamed|ustafa)",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );
+    }
+    
+    #[test]
+    fn overall_4() {
+
+        let locus: String = String::from("tests/tfile4");
+        assert_eq!(
+            "L(eon(ardo)?|i(am|nda|sa)|o(gan|r(enzo|i)|uise?)|ucía|yn|éo)",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn overall_5() {
+
+        let locus: String = String::from("tests/tfile5");
+        assert_eq!(
+            "a(b(c(d|e|fff)?|dddd)|zz)",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn overall_6() {
+
+        let locus: String = String::from("tests/tfile6");
+        assert_eq!(
+            "abc|bcd|efg",
+            String::from_utf8(parse_file(locus).clone()).unwrap()
+        );
+    }
+
+}
+
+
+
+
+
+
 
 
 
