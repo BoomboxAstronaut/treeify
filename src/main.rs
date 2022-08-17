@@ -30,7 +30,7 @@ impl LSubGroup {
     }
     
     fn decount(&mut self) {
-        for x in &mut self.counts {
+        for x in self.counts.iter_mut() {
             *x -= 1;
         }
     }
@@ -95,10 +95,7 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
     }
 
     while words.inp.len() > 0 {
-
-        if dbg {
-            words.info();
-        }
+        if dbg { words.info() };
 
         if words.inp.len() == 1 {
             // Last Line
@@ -182,9 +179,23 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
 }
 
 fn get_file(file_name: String) -> io::Result<Vec<Vec<u8>>> {
-
     let word_vectors: Vec<Vec<u8>> = io::Cursor::new(fs::read(&file_name)?).split(b'\n').map(|x| x.unwrap()).collect();
     return Ok(word_vectors)
+}
+
+fn clean(input: &mut Vec<Vec<u8>>) {
+
+    for x in input.iter_mut() {
+        while x.len() > 0 && x.last() == Some(&32) {
+            x.pop();
+        }
+        while x.len() > 0 && x[0] == 32 {
+            x.remove(0);
+        }
+    }
+    input.retain(|x| x.len() > 0);
+    input.sort();
+    input.dedup();
 }
 
 fn parse_file(file: String, dbg: bool) -> Vec<u8> {
@@ -194,12 +205,11 @@ fn parse_file(file: String, dbg: bool) -> Vec<u8> {
     let mut letter_group: LSubGroup;
     let mut sub_tree: Vec<u8>;
     
+    clean(&mut wlist);
     while wlist.len() > 0 {
-        
         letter_group = extract_sub_group(&mut wlist);
         sub_tree = treeify(letter_group, dbg).unwrap();
         word_tree.append(&mut sub_tree);
-        
     }
 
     word_tree.pop();
@@ -213,7 +223,6 @@ fn main() -> io::Result<()> {
 
     println!("{}", String::from_utf8(output.clone()).unwrap());
     Ok(())
-
 }
 
 
@@ -223,7 +232,6 @@ fn main() -> io::Result<()> {
 mod tests {
     use crate::parse_file;
 
-    
     #[test]
     fn overall_1() {
         let locus: String = String::from("tests/tfile1");
@@ -235,7 +243,6 @@ mod tests {
 
     #[test]
     fn overall_2() {
-
         let locus: String = String::from("tests/tfile2");
         assert_eq!(
             "S(a(m(antha|uel)|ndra|rah?)|cott|e(an|rgei)|h(aron|irley)|o(f(ia|ía)|phia)|te(ph(anie|en)|ven)|usan)",
@@ -245,7 +252,6 @@ mod tests {
     
     #[test]
     fn overall_3() {
-
         let locus: String = String::from("tests/tfile3");
         assert_eq!(
             "M(a(dison|hmoud|r(garet|i(a|e|lyn)|k|t(ha|ina|ín)|y(am)?|ía)|son|t(eo|t(eo|hew))|xim)|e(gan|lissa)|i(ch(ael|elle)|khail)|ohamed|ustafa)",
@@ -255,7 +261,6 @@ mod tests {
     
     #[test]
     fn overall_4() {
-
         let locus: String = String::from("tests/tfile4");
         assert_eq!(
             "L(eon(ardo)?|i(am|nda|sa)|o(gan|r(enzo|i)|uise?)|ucía|yn|éo)",
@@ -265,8 +270,25 @@ mod tests {
 
     #[test]
     fn overall_5() {
-
         let locus: String = String::from("tests/tfile5");
+        assert_eq!(
+            "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
+            String::from_utf8(parse_file(locus, false).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn single_line_groups() {
+        let locus: String = String::from("tests/tfile6");
+        assert_eq!(
+            "abc|bcd|efg",
+            String::from_utf8(parse_file(locus, false).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn excess_optionals() {
+        let locus: String = String::from("tests/tfile7");
         assert_eq!(
             "a(bc(d(dd)?|e|fff)?|zzz)",
             String::from_utf8(parse_file(locus, false).clone()).unwrap()
@@ -274,11 +296,37 @@ mod tests {
     }
 
     #[test]
-    fn overall_6() {
-
-        let locus: String = String::from("tests/tfile6");
+    fn out_of_order() {
+        let locus: String = String::from("tests/tfile8");
         assert_eq!(
-            "abc|bcd|efg",
+            "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
+            String::from_utf8(parse_file(locus, false).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn empty_lines() {
+        let locus: String = String::from("tests/tfile9");
+        assert_eq!(
+            "abc|cde|fgh",
+            String::from_utf8(parse_file(locus, false).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn leading_trailing_whitespace() {
+        let locus: String = String::from("tests/tfile10");
+        assert_eq!(
+            "a(bc|cd)|cde|fg(h|y)",
+            String::from_utf8(parse_file(locus, false).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn non_unique_lines() {
+        let locus: String = String::from("tests/tfile11");
+        assert_eq!(
+            "a(bc|cd)|cde|fg(h|y)",
             String::from_utf8(parse_file(locus, false).clone()).unwrap()
         );
     }
