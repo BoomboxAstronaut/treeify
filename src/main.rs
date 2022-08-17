@@ -429,6 +429,24 @@ mod tests {
             String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
         );
     }
+
+    #[test]
+    fn start_optional() {
+        let locus: String = String::from("tests/tfile13");
+        assert_eq!(
+            "M(a(r(shall|tin(ez)?)|son)?|cdonald|e(dina|nd(ez|oza)|yer)|i(ll(er|s)|tchell))",
+            String::from_utf8(parse_file(locus, true, true).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn end_optional() {
+        let locus: String = String::from("tests/tfile14");
+        assert_eq!(
+            "H(a(wkins|yes)|e(n(derson|ry)|r(nandez|rera))|i(cks|ll)|o(lmes|ward)|u(ang|ghes|nt(er)?))",
+            String::from_utf8(parse_file(locus, true, true).clone()).unwrap()
+        );
+    }
 }
 
 
