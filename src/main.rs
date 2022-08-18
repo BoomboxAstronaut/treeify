@@ -12,7 +12,7 @@ struct LSubGroup {
     n_match: u8,
     i_next: u8,
     lim: u16,
-    eph: u8
+    eph: Vec<u8>
 }
 
 impl LSubGroup {
@@ -30,6 +30,12 @@ impl LSubGroup {
     
     fn decount(&mut self) {
         for x in self.counts.iter_mut() {
+            *x -= 1;
+        }
+    }
+
+    fn deceph(&mut self) {
+        for x in self.eph.iter_mut() {
             *x -= 1;
         }
     }
@@ -77,7 +83,7 @@ fn extract_sub_group(master_list: &mut Vec<Vec<u8>>) -> LSubGroup {
         n_match: 0,
         i_next: 0,
         lim: 1024,
-        eph: 0
+        eph: Vec::new()
     };
 
     return sub_group;
@@ -100,6 +106,10 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
             words.outp.append(&mut words.inp.remove(0));
             for _ in 0..words.counts.len() {
                 words.outp.push(41u8);
+                if !words.eph.is_empty() {
+                    words.outp.push(63u8);
+                    words.eph.pop();
+                }
             }
             words.outp.push(124u8);
 
@@ -108,9 +118,9 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
             if words.inp[0].is_empty() {
                 words.inp.remove(0);
                 words.l_last = 0;
-                words.eph += 1;
                 words.i_next = 0;
                 words.decount();
+                words.eph.push(words.counts.last().unwrap().clone());
             } else {
                 words.l_last = words.inp[0].remove(0);
                 words.incr()
@@ -132,13 +142,13 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
             if words.n_match > 1 {
                 words.consecutive_match();
             } else if words.n_match == 1 {
-                if words.inp[0].is_empty() && words.eph > 0 && words.counts.last() == Some(&1) {
+                if words.inp[0].is_empty() && !words.eph.is_empty() && words.eph.last() == Some(&1) && words.counts.last() == Some(&1) {
                     words.inp.remove(0);
                     words.outp.pop();
                     words.counts.pop();
                     words.outp.push(words.l_last);
                     words.outp.push(63u8);
-                    words.eph -= 1;
+                    words.eph.pop();
                 } else {
                     words.outp.push(words.l_last);
                     words.outp.append(&mut words.inp.remove(0));
@@ -147,6 +157,7 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
                     words.outp.push(124u8);
                 }
                 words.decount();
+                words.deceph();
                 words.zero();
             }
         }
@@ -154,9 +165,10 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
         while words.counts.last() < Some(&1) {
             // Clear Counts
             words.outp.push(41u8);
-            if words.eph > 0 {
+            if !words.eph.is_empty() && words.eph.last() == Some(&0) {
                 words.outp.push(63u8);
-                words.eph -= 1;
+                words.eph.pop();
+                words.deceph();
             }
             if words.counts.len() > 1 {
                 words.counts.reverse();
