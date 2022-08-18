@@ -239,7 +239,7 @@ fn pre_process(input: &mut Vec<Vec<u8>>) {
     input.dedup();
 }
 
-fn post_process(input: &mut Vec<u8>, dia: bool) {
+fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
     
     let mut found: bool = true;
     let mut max_idx: i16;
@@ -263,7 +263,8 @@ fn post_process(input: &mut Vec<u8>, dia: bool) {
     }
     
     let mut indexes: Vec<usize> = Vec::new();
-    if dia {
+
+    if arg_list.contains(&"-d".to_string()) {
         let mut diacs: HashMap<usize, u8> = HashMap::new();
         for i in 224..230 {diacs.insert(i, 97);};
         for i in 232..236 {diacs.insert(i, 101);};
@@ -284,6 +285,18 @@ fn post_process(input: &mut Vec<u8>, dia: bool) {
             input.insert(*i, 91);
         }
     }
+
+    if arg_list.contains(&"-n".to_string()) {
+        indexes.clear();
+        indexes.extend(0..input.len());
+        indexes.reverse();
+        for i in indexes.iter() {
+            if input[*i] == 40u8 {
+                input.insert(i+1, 58);
+                input.insert(i+1, 63);
+            }
+        }
+    }
     
     indexes.clear();
     indexes.extend(0..input.len());
@@ -298,22 +311,29 @@ fn post_process(input: &mut Vec<u8>, dia: bool) {
     }
 }
 
-fn parse_file(file: String, dia:bool, dbg: bool) -> Vec<u8> {
+fn parse_file(arg_list: &Vec<String>) -> Vec<u8> {
 
-    let mut wlist: Vec<Vec<u8>> = get_file(file).unwrap();
+    let mut wlist: Vec<Vec<u8>> = get_file(arg_list.last().unwrap().clone().to_string()).unwrap();
     let mut word_tree: Vec<u8> = Vec::new();
     let mut letter_group: LSubGroup;
     let mut sub_tree: Vec<u8>;
+    let pdbg: bool;
+    if arg_list.contains(&"-dbg".to_string()) {
+        pdbg = true;
+    } else {
+        pdbg = false;
+    }
     
     pre_process(&mut wlist);
     while wlist.len() > 0 {
         letter_group = extract_sub_group(&mut wlist);
-        sub_tree = treeify(letter_group, dbg).unwrap();
+
+        sub_tree = treeify(letter_group, pdbg).unwrap();
         word_tree.append(&mut sub_tree);
     }
 
     word_tree.pop();
-    post_process(&mut word_tree, dia);
+    post_process(&mut word_tree, &arg_list);
     return word_tree
 }
 
@@ -321,11 +341,7 @@ fn main() {
 
     let argv: Vec<String> = env::args().collect();
     let output: Vec<u8>;
-    if argv.len() > 2 && argv[1] == "-d" {
-        output = parse_file(argv[2].clone(), true, false);
-    } else {
-        output = parse_file(argv[1].clone(), false, false);
-    }
+    output = parse_file(&argv);
     println!("{}", String::from_utf8(output.clone()).unwrap());
 }
 
@@ -336,127 +352,127 @@ mod tests {
 
     #[test]
     fn overall_1() {
-        let locus: String = String::from("tests/tfile1");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile1")];
         assert_eq!(
             "A(aron|b(dullah|igail)|dam|hmed|l(an|bert|e(ssandro|x(ander|is))|i(ce)?|ma)|m(anda|ber|elia|y)|n(astasia|dre[aw]|gela|na?|t(hony|oni))|rthur|shley|u(rora|stin)|va)",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );        
     }
 
     #[test]
     fn overall_2() {
-        let locus: String = String::from("tests/tfile2");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile2")];
         assert_eq!(
             "S(a(m(antha|uel)|ndra|rah?)|cott|e(an|rgei)|h(aron|irley)|o(f(ia|[ií]a)|phia)|te(ph(anie|en)|ven)|usan)",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
     
     #[test]
     fn overall_3() {
-        let locus: String = String::from("tests/tfile3");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile3")];
         assert_eq!(
             "M(a(dison|hmoud|r(garet|i(a|e|lyn)|k|t(ha|ina|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)|e(gan|lissa)|i(ch(ael|elle)|khail)|ohamed|ustafa)",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
     
     #[test]
     fn overall_4() {
-        let locus: String = String::from("tests/tfile4");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile4")];
         assert_eq!(
             "L(eon(ardo)?|i(am|nda|sa)|o(gan|r(enzo|i)|uise?)|uc[ií]a|yn|[eé]o)",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn overall_5() {
-        let locus: String = String::from("tests/tfile5");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile5")];
         assert_eq!(
             "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn single_line_groups() {
-        let locus: String = String::from("tests/tfile6");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile6")];
         assert_eq!(
             "abc|bcd|efg",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn excess_optionals() {
-        let locus: String = String::from("tests/tfile7");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile7")];
         assert_eq!(
             "a(bc(d(dd)?|e|fff)?|zzz)",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn out_of_order() {
-        let locus: String = String::from("tests/tfile8");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile8")];
         assert_eq!(
             "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn empty_lines() {
-        let locus: String = String::from("tests/tfile9");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile9")];
         assert_eq!(
             "abc|cde|fgh",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn leading_trailing_whitespace() {
-        let locus: String = String::from("tests/tfile10");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile10")];
         assert_eq!(
             "a(bc|cd)|cde|fg[hy]",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn non_unique_lines() {
-        let locus: String = String::from("tests/tfile11");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile11")];
         assert_eq!(
             "a(bc|cd)|cde|fg[hy]",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn diacritics() {
-        let locus: String = String::from("tests/tfile12");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile12")];
         assert_eq!(
             "ab(cd[eé]|d[uü])|bcd|cfg[ií]",
-            String::from_utf8(parse_file(locus, true, false).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn start_optional() {
-        let locus: String = String::from("tests/tfile13");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile13")];
         assert_eq!(
             "M(a(r(shall|tin(ez)?)|son)?|cdonald|e(dina|nd(ez|oza)|yer)|i(ll(er|s)|tchell))",
-            String::from_utf8(parse_file(locus, true, true).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 
     #[test]
     fn end_optional() {
-        let locus: String = String::from("tests/tfile14");
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile14")];
         assert_eq!(
             "H(a(wkins|yes)|e(n(derson|ry)|r(nandez|rera))|i(cks|ll)|o(lmes|ward)|u(ang|ghes|nt(er)?))",
-            String::from_utf8(parse_file(locus, true, true).clone()).unwrap()
+            String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
 }
