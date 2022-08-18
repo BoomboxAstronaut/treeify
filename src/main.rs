@@ -119,6 +119,7 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
                 words.inp.remove(0);
                 words.l_last = 0;
                 words.i_next = 0;
+                words.deceph();
                 words.decount();
                 if words.counts.last().unwrap() > &0 {
                     words.eph.push(words.counts.last().unwrap().clone());
@@ -170,7 +171,6 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
             if !words.eph.is_empty() && words.eph.last() == Some(&0) {
                 words.outp.push(63u8);
                 words.eph.pop();
-                words.deceph();
             }
             if words.counts.len() > 1 {
                 words.counts.reverse();
@@ -483,6 +483,15 @@ mod tests {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile15")];
         assert_eq!(
             "Zh(a(ng|o)|ou)",
+            String::from_utf8(parse_file(&args).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn extended_optional() {
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile16")];
+        assert_eq!(
+            "M(a(dison|hmoud|r(garet|i(e|lyn)|k|shall|t(ha|in(a|ez)?|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)?|cdonald|edina)",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
