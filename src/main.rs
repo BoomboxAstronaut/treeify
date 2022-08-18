@@ -18,13 +18,13 @@ struct LSubGroup {
 impl LSubGroup {
 
     fn info(&self) {
-        println!("Info: LL: {:?}, Out: {:?}, Counts: {:?}, Match Count: {:?}, Next Index: {:?}, Current: {:?}", 
+        println!("Info: LL: {:?}, Counts: {:?}, Match Count: {:?}, Next Index: {:?}, Eph: {:?}, Current: {:?}", 
             char::from(self.l_last),
-            String::from_utf8(self.outp.clone()).unwrap(),
             self.counts,
             self.n_match,
             self.i_next,
-            String::from_utf8(self.inp[0].clone()).unwrap()
+            self.eph.last().unwrap_or(&255),
+            String::from_utf8(self.inp[0].clone())
         );
     }
     
@@ -36,7 +36,9 @@ impl LSubGroup {
 
     fn deceph(&mut self) {
         for x in self.eph.iter_mut() {
-            *x -= 1;
+            if *x != 0 {
+                *x -= 1;
+            }
         }
     }
 
@@ -168,7 +170,7 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
         while words.counts.last() < Some(&1) {
             // Clear Counts
             words.outp.push(41u8);
-            if !words.eph.is_empty() && words.eph.last() == Some(&0) {
+            if !words.eph.is_empty() && words.eph.last() < Some(&1) {
                 words.outp.push(63u8);
                 words.eph.pop();
             }
@@ -310,6 +312,9 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
         } else if (161..192).contains(&input[i]) {
             input.insert(i, 194);
         }
+    }
+    if arg_list.contains(&"-dbg".to_string()) {
+        println!("{:?}", &String::from_utf8(input.clone()).unwrap());
     }
 }
 
