@@ -120,7 +120,9 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
                 words.l_last = 0;
                 words.i_next = 0;
                 words.decount();
-                words.eph.push(words.counts.last().unwrap().clone());
+                if words.counts.last().unwrap() > &0 {
+                    words.eph.push(words.counts.last().unwrap().clone());
+                }
             } else {
                 words.l_last = words.inp[0].remove(0);
                 words.incr()
@@ -475,7 +477,17 @@ mod tests {
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
+
+    #[test]
+    fn false_optional() {
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile15")];
+        assert_eq!(
+            "Zh(a(ng|o)|ou)",
+            String::from_utf8(parse_file(&args).clone()).unwrap()
+        );
+    }
 }
+
 
 
 
