@@ -54,7 +54,15 @@ impl LSubGroup {
 
     fn consecutive_match(&mut self) {
         if Some(&self.n_match) == self.counts.last() && self.outp.last() == Some(&40u8) {
-            self.outp.pop();
+            if !self.eph.is_empty() {
+                if self.eph.last() != self.counts.last() {
+                    self.outp.pop();
+                } else {
+                    self.counts.push(self.n_match);
+                }
+            } else {
+                self.outp.pop();
+            }   
         } else {
             self.counts.push(self.n_match);   
         }
@@ -147,7 +155,7 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
             if words.n_match > 1 {
                 words.consecutive_match();
             } else if words.n_match == 1 {
-                if words.inp[0].is_empty() && !words.eph.is_empty() && words.eph.last() == Some(&1) && words.counts.last() == Some(&1) {
+                if words.inp[0].is_empty() && !words.eph.is_empty() && words.eph.last() == Some(&0) && words.counts.last() == Some(&1) {
                     words.inp.remove(0);
                     words.outp.pop();
                     words.counts.pop();
@@ -243,10 +251,18 @@ fn pre_process(input: &mut Vec<Vec<u8>>) {
     input.dedup();
 }
 
+fn ridx(start: usize) -> Vec<usize> {
+    let mut idx: Vec<usize> = Vec::new();
+    idx.extend(0..start);
+    idx.reverse();
+    return idx
+}
+
 fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
     
     let mut found: bool = true;
     let mut max_idx: i16;
+    let mut indexes: Vec<usize> = Vec::new();
     
     while found {
         max_idx = input.len() as i16 - 4;
@@ -265,8 +281,6 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
             }
         }
     }
-    
-    let mut indexes: Vec<usize> = Vec::new();
 
     if arg_list.contains(&"-d".to_string()) {
         let mut diacs: HashMap<usize, u8> = HashMap::new();
@@ -291,9 +305,7 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
     }
 
     if arg_list.contains(&"-n".to_string()) {
-        indexes.clear();
-        indexes.extend(0..input.len());
-        indexes.reverse();
+        indexes = ridx(input.len());
         for i in indexes.iter() {
             if input[*i] == 40u8 {
                 input.insert(i+1, 58);
@@ -302,9 +314,15 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
         }
     }
     
-    indexes.clear();
-    indexes.extend(0..input.len());
-    indexes.reverse();
+    indexes = ridx(input.len());
+    for i in indexes {
+        if input[i] == 63 && input[i-1] == 41 && input[i-3] == 40 {
+            input.remove(i-3);
+            input.remove(i-2);
+        }
+    }
+
+    indexes = ridx(input.len());
     for i in indexes {
         if (192..=255).contains(&input[i]) {
             input[i] = &input[i] - 64;
@@ -313,6 +331,7 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
             input.insert(i, 194);
         }
     }
+
     if arg_list.contains(&"-dbg".to_string()) {
         println!("{:?}", &String::from_utf8(input.clone()).unwrap());
     }
@@ -497,6 +516,15 @@ mod tests {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile16")];
         assert_eq!(
             "M(a(dison|hmoud|r(garet|i(e|lyn)|k|shall|t(ha|in(a|ez)?|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)?|cdonald|edina)",
+            String::from_utf8(parse_file(&args).clone()).unwrap()
+        );
+    }
+
+    #[test]
+    fn consecutive_optional() {
+        let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile17")];
+        assert_eq!(
+            "R(begin|ober(t(s(on)?)?|u)?|pmedian|um(ps?)?|zending)",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
