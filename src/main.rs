@@ -51,25 +51,6 @@ impl LSubGroup {
         self.i_next += 1;
         self.n_match += 1;
     }
-
-    fn consecutive_match(&mut self) {
-        if Some(&self.n_match) == self.counts.last() && self.outp.last() == Some(&40u8) {
-            if !self.eph.is_empty() {
-                if self.eph.last() != self.counts.last() {
-                    self.outp.pop();
-                } else {
-                    self.counts.push(self.n_match);
-                }
-            } else {
-                self.outp.pop();
-            }   
-        } else {
-            self.counts.push(self.n_match);   
-        }
-        self.outp.extend([self.l_last, 40u8].iter());
-        Self::zero(self);
-    }
-
 }
 
 fn extract_sub_group(master_list: &mut Vec<Vec<u8>>) -> LSubGroup {
@@ -138,22 +119,59 @@ fn treeify(mut words: LSubGroup, dbg: bool) -> Option<Vec<u8>> {
                 words.l_last = words.inp[0].remove(0);
                 words.incr()
             }
+
         } else if words.l_last == words.inp[words.i_next as usize][0] {
             // Letter Matched
-            if &words.i_next >= words.counts.last().unwrap() {
-                words.outp.push(words.l_last);
+            if &words.i_next >= words.counts.last().unwrap() || words.i_next >= words.inp.len() as u8 { 
+                if Some(&words.n_match) == words.counts.last() && words.outp.last() == Some(&40u8) {
+                    words.outp.pop();
+                    words.outp.push(words.l_last);
+                    if words.n_match > 1 {
+                        words.outp.push(40);
+                    }
+                } else {
+                    words.outp.push(words.l_last);
+                }
                 words.zero();
             } else {
                 words.inp[words.i_next as usize].remove(0);
                 words.incr();
+                if words.i_next >= words.inp.len() as u8 {
+                    if Some(&words.n_match) == words.counts.last() && words.outp.last() == Some(&40u8) {
+                        words.outp.pop();
+                    } else {
+                        words.counts.push(words.n_match);
+                    }
+                    words.outp.push(words.l_last);
+                    if words.n_match > 1 {
+                        words.outp.push(40);
+                    }
+                    words.zero();
+                }
             }
-            if words.i_next >= words.inp.len() as u8 {
-                words.consecutive_match();
-            }
+            
+
         } else if words.l_last != words.inp[words.i_next as usize][0] {
             // Letter not Matched
             if words.n_match > 1 {
-                words.consecutive_match();
+                if Some(&words.n_match) == words.counts.last() && words.outp.last() == Some(&40u8) {
+                    if !words.eph.is_empty() {
+                        if words.eph.last() != words.counts.last() {
+                            words.outp.pop();
+                        } else {
+                            words.counts.push(words.n_match);
+                        }
+                    } else {
+                        words.outp.pop();
+                    }
+                } else {
+                    words.counts.push(words.n_match);
+                }
+                words.outp.push(words.l_last);
+                if words.n_match > 1 {
+                    words.outp.push(40u8);
+                }
+                words.zero();
             } else if words.n_match == 1 {
                 if words.inp[0].is_empty() && !words.eph.is_empty() && words.eph.last() == Some(&0) && words.counts.last() == Some(&1) {
                     words.inp.remove(0);
@@ -529,15 +547,4 @@ mod tests {
         );
     }
 }
-
-
-
-
-
-
-
-
-
-
-
 
