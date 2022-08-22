@@ -350,6 +350,17 @@ fn post_process(input: &mut Vec<u8>, arg_list: &Vec<String>) {
         }
     }
 
+    if arg_list.contains(&"-n".to_string()) {
+        input.insert(0, 58);
+        input.insert(0, 63);
+    }
+    input.insert(0, 40);
+    input.insert(0, 98);
+    input.insert(0, 92);
+    input.push(41);
+    input.push(92);
+    input.push(98);
+
     if arg_list.contains(&"-dbg".to_string()) {
         println!("{:?}", &String::from_utf8(input.clone()).unwrap());
     }
@@ -398,7 +409,7 @@ mod tests {
     fn overall_1() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile1")];
         assert_eq!(
-            "A(aron|b(dullah|igail)|dam|hmed|l(an|bert|e(ssandro|x(ander|is))|i(ce)?|ma)|m(anda|ber|elia|y)|n(astasia|dre[aw]|gela|na?|t(hony|oni))|rthur|shley|u(rora|stin)|va)",
+            "\\b(A(aron|b(dullah|igail)|dam|hmed|l(an|bert|e(ssandro|x(ander|is))|i(ce)?|ma)|m(anda|ber|elia|y)|n(astasia|dre[aw]|gela|na?|t(hony|oni))|rthur|shley|u(rora|stin)|va))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );        
     }
@@ -407,7 +418,7 @@ mod tests {
     fn overall_2() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile2")];
         assert_eq!(
-            "S(a(m(antha|uel)|ndra|rah?)|cott|e(an|rgei)|h(aron|irley)|o(f(ia|[ií]a)|phia)|te(ph(anie|en)|ven)|usan)",
+            "\\b(S(a(m(antha|uel)|ndra|rah?)|cott|e(an|rgei)|h(aron|irley)|o(f(ia|[ií]a)|phia)|te(ph(anie|en)|ven)|usan))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -416,7 +427,7 @@ mod tests {
     fn overall_3() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile3")];
         assert_eq!(
-            "M(a(dison|hmoud|r(garet|i(a|e|lyn)|k|t(ha|ina|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)|e(gan|lissa)|i(ch(ael|elle)|khail)|ohamed|ustafa)",
+            "\\b(M(a(dison|hmoud|r(garet|i(a|e|lyn)|k|t(ha|ina|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)|e(gan|lissa)|i(ch(ael|elle)|khail)|ohamed|ustafa))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -425,7 +436,7 @@ mod tests {
     fn overall_4() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile4")];
         assert_eq!(
-            "L(eon(ardo)?|i(am|nda|sa)|o(gan|r(enzo|i)|uise?)|uc[ií]a|yn|[eé]o)",
+            "\\b(L(eon(ardo)?|i(am|nda|sa)|o(gan|r(enzo|i)|uise?)|uc[ií]a|yn|[eé]o))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -434,7 +445,7 @@ mod tests {
     fn overall_5() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile5")];
         assert_eq!(
-            "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
+            "\\b(E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary)\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -443,7 +454,7 @@ mod tests {
     fn single_line_groups() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile6")];
         assert_eq!(
-            "abc|bcd|efg",
+            "\\b(abc|bcd|efg)\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -452,7 +463,7 @@ mod tests {
     fn excess_optionals() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile7")];
         assert_eq!(
-            "a(bc(d(dd)?|e|fff)?|zzz)",
+            "\\b(a(bc(d(dd)?|e|fff)?|zzz))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -461,7 +472,7 @@ mod tests {
     fn out_of_order() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile8")];
         assert_eq!(
-            "E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary",
+            "\\b(E(mma|ric|than|ugene|velyn)|F(atima|ran(ces(co)?|k))|O(liv(er|ia)|mar)|P(a(mela|tric(ia|k)|ul)|eter)|W(ayne|illi(am|e))|Y(elena|ousouf)|Zachary)\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -470,7 +481,7 @@ mod tests {
     fn empty_lines() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile9")];
         assert_eq!(
-            "abc|cde|fgh",
+            "\\b(abc|cde|fgh)\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -479,7 +490,7 @@ mod tests {
     fn leading_trailing_whitespace() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile10")];
         assert_eq!(
-            "a(bc|cd)|cde|fg[hy]",
+            "\\b(a(bc|cd)|cde|fg[hy])\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -488,7 +499,7 @@ mod tests {
     fn non_unique_lines() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile11")];
         assert_eq!(
-            "a(bc|cd)|cde|fg[hy]",
+            "\\b(a(bc|cd)|cde|fg[hy])\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -497,7 +508,7 @@ mod tests {
     fn diacritics() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile12")];
         assert_eq!(
-            "ab(cd[eé]|d[uü])|bcd|cfg[ií]",
+            "\\b(ab(cd[eé]|d[uü])|bcd|cfg[ií])\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -506,7 +517,7 @@ mod tests {
     fn start_optional() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile13")];
         assert_eq!(
-            "M(a(r(shall|tin(ez)?)|son)?|cdonald|e(dina|nd(ez|oza)|yer)|i(ll(er|s)|tchell))",
+            "\\b(M(a(r(shall|tin(ez)?)|son)?|cdonald|e(dina|nd(ez|oza)|yer)|i(ll(er|s)|tchell)))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -515,7 +526,7 @@ mod tests {
     fn end_optional() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile14")];
         assert_eq!(
-            "H(a(wkins|yes)|e(n(derson|ry)|r(nandez|rera))|i(cks|ll)|o(lmes|ward)|u(ang|ghes|nt(er)?))",
+            "\\b(H(a(wkins|yes)|e(n(derson|ry)|r(nandez|rera))|i(cks|ll)|o(lmes|ward)|u(ang|ghes|nt(er)?)))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -524,7 +535,7 @@ mod tests {
     fn false_optional() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile15")];
         assert_eq!(
-            "Zh(a(ng|o)|ou)",
+            "\\b(Zh(a(ng|o)|ou))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -533,7 +544,7 @@ mod tests {
     fn extended_optional() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile16")];
         assert_eq!(
-            "M(a(dison|hmoud|r(garet|i(e|lyn)|k|shall|t(ha|in(a|ez)?|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)?|cdonald|edina)",
+            "\\b(M(a(dison|hmoud|r(garet|i(e|lyn)|k|shall|t(ha|in(a|ez)?|[ií]n)|y(am)?|[ií]a)|son|t(eo|t(eo|hew))|xim)?|cdonald|edina))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
@@ -542,7 +553,7 @@ mod tests {
     fn consecutive_optional() {
         let args: Vec<String> = vec![String::from("-d"), String::from("tests/tfile17")];
         assert_eq!(
-            "R(begin|ober(t(s(on)?)?|u)?|pmedian|um(ps?)?|zending)",
+            "\\b(R(begin|ober(t(s(on)?)?|u)?|pmedian|um(ps?)?|zending))\\b",
             String::from_utf8(parse_file(&args).clone()).unwrap()
         );
     }
